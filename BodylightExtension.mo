@@ -151,6 +151,8 @@ package BodylightExtension
     </p>
     </html>"));
     end RealIO;
+
+    type HydraulicResistance = Real(final quantity="HydraulicResistance",final unit="(Pa.s)/m3", displayUnit="(mmHg.min)/ml", nominal=(1e+6)*(133.322387415)*60, min=0);
   end Types;
 
   package Tests
@@ -168,8 +170,10 @@ package BodylightExtension
       Bodylight.Types.Constants.HydraulicConductanceConst hydraulicConductance(
           k=1.2501026264094e-10)
         annotation (Placement(transformation(extent={{-78,54},{-70,62}})));
-      Components.Hydraulic.Resistor resistor(useConductanceInput=false,
-          useResistanceInput=true)
+      Components.Hydraulic.Resistor resistor(
+        enable=false,
+        useConductanceInput=false,
+        useResistanceInput=true)
         annotation (Placement(transformation(extent={{-46,20},{-26,40}})));
     equation
       connect(unlimitedPump.q_out, resistor.q_in) annotation (Line(
