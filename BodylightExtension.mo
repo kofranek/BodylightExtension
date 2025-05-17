@@ -2,69 +2,35 @@ within ;
 package BodylightExtension
   package Components
     package Hydraulic
-      model Conductor "Hydraulic resistor, where conductance=1/resistance"
-       extends Bodylight.Hydraulic.Interfaces.OnePort;
-       extends Bodylight.Icons.HydraulicResistor;
-
-        parameter Boolean enable=true   "if false, no resistance is used"
-          annotation(Evaluate=true, HideResult=true, choices(checkBox=true),
-          Dialog(group="External inputs/outputs"));
-
-        parameter Boolean useConductanceInput = false
-          "=true, if external conductance value is used"
-          annotation(Evaluate=true, HideResult=true, choices(checkBox=true),
-          Dialog(group="External inputs/outputs"));
-
-        parameter Bodylight.Types.HydraulicConductance Conductance=0
-          "Hydraulic conductance if useConductanceInput=false"
-          annotation (Dialog(enable=not useConductanceInput));
-
-        Bodylight.Types.RealIO.HydraulicConductanceInput cond(start=Conductance)=c
-          if useConductanceInput annotation (Placement(transformation(
-              extent={{-20,-20},{20,20}},
-              rotation=270,
-              origin={0,60})));
-        Bodylight.Types.HydraulicResistance resistance=1/max(c, 1e-15)
-          "Informative resistance value";
-      protected
-         Bodylight.Types.HydraulicConductance c;
-      equation
-        if not useConductanceInput then
-          c=Conductance;
-        end if;
-
-        // conditionally disable the resistance
-        if c >= Modelica.Constants.inf or not enable then
-          q_in.pressure = q_out.pressure;
-        else
-          q_in.q = c * (q_in.pressure - q_out.pressure);
-        end if;
-        annotation (Icon(coordinateSystem(preserveAspectRatio=false, extent={{
-                  -100,-100},{100,100}}),
-                         graphics={Text(
-                extent={{-220,-40},{200,-80}},
-                lineColor={0,0,255},
-                fillColor={58,117,175},
-                fillPattern=FillPattern.Solid,
-                textString="%name")}),
-          Documentation(revisions="<html>
-<p><i>2009-2010</i></p>
-<p>Marek Matejak, Charles University, Prague, Czech Republic </p>
-</html>",   info="<html>
-<p>This hydraulic conductance (resistance) element contains two connector sides. No hydraulic medium volume is changing in this element during simulation. That means that sum of flow in both connector sides is zero. The flow through element is determined by <b>Ohm&apos;s law</b>. It is used conductance (=1/resistance) because it could be numerical zero better then infinity in resistance. </p>
-</html>"));
-      end Conductor;
-
       model Resistor
         extends Bodylight.Hydraulic.Components.Conductor(final Conductance=
               conditionalConductance);
+
+        parameter Boolean useResistanceInput=false
+          "=true if externalresistance value is used"
+          annotation (Dialog(enable=(not useConductanceInput)));
+
+
         parameter Bodylight.Types.HydraulicResistance Resistance=0
           "Hydraulic conductance if useConductanceInput=false"
-          annotation (Dialog(enable=not useConductanceInput));
+          annotation (Dialog(enable=((not useConductanceInput) and (not useResistanceInput))));
+
+        Bodylight.Types.RealIO.HydraulicResistanceInput hydraulicresistance
+          if (useResistanceInput and not useConductanceInput) annotation (
+            Placement(transformation(extent={{-174,44},
+                  {-134,84}}), iconTransformation(
+              extent={{-20,-20},{20,20}},
+              rotation=270,
+              origin={-2,60})));
+
       protected
-                  final parameter Bodylight.Types.HydraulicConductance conditionalConductance=if
-            useConductanceInput or Resistance == 0 then Modelica.Constants.inf
+        final parameter Bodylight.Types.HydraulicConductance conditionalConductance=
+            if useConductanceInput or Resistance == 0 then Modelica.Constants.inf
              else 1/Resistance;
+      equation
+         if useResistanceInput then
+           Resistance=hydraulicResistance;
+         end if;
       end Resistor;
     end Hydraulic;
   end Components;
@@ -128,10 +94,15 @@ package BodylightExtension
 
   package Tests
     model ResistorTest
-      Components.Hydraulic.Resistor resistor
-        annotation (Placement(transformation(extent={{-32,18},{-12,38}})));
-      Components.Hydraulic.Conductor conductor
-        annotation (Placement(transformation(extent={{-28,-22},{-8,-2}})));
+      Bodylight.Types.Constants.HydraulicResistanceConst hydraulicResistance
+        annotation (Placement(transformation(extent={{-84,54},{-76,62}})));
+      Bodylight.Types.Constants.HydraulicConductanceConst hydraulicConductance
+        annotation (Placement(transformation(extent={{-84,72},{-76,80}})));
+      Components.Hydraulic.Resistor resistor(
+        useConductanceInput=true,
+        useResistanceInput=true,
+        Resistance=351971102775.6)
+        annotation (Placement(transformation(extent={{-40,20},{-20,40}})));
       annotation (Icon(coordinateSystem(preserveAspectRatio=false)), Diagram(
             coordinateSystem(preserveAspectRatio=false)));
     end ResistorTest;
